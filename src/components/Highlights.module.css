@@ -1,7 +1,12 @@
 .section {
   padding: 100px 0;
-  background-color: var(--color-bg-main);
+  background:
+    radial-gradient(ellipse at 10% 10%, rgba(232, 242, 234, 0.6) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 90%, rgba(197, 155, 39, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 55% 45%, rgba(140, 184, 153, 0.1) 0%, transparent 55%),
+    var(--color-bg-main);
   position: relative;
+  overflow: hidden;
 }
 
 .titleArea {

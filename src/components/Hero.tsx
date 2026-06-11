@@ -117,6 +117,9 @@ export default function Hero() {
 
   return (
     <section className={styles.heroSection} id="hero" ref={heroRef}>
+      {/* Grain texture overlay */}
+      <div className="grain-overlay" />
+
       {/* Background Floating Leaf Particles */}
       {leafParticles.map((leaf) => (
         <svg

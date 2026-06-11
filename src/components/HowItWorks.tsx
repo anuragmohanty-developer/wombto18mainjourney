@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { UserPlus, BellRing, TreePine, Check } from "lucide-react";
 import styles from "./HowItWorks.module.css";
 
@@ -13,6 +13,23 @@ interface StepItem {
 }
 
 export default function HowItWorks() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   const steps: StepItem[] = [
     {
       number: "01",
@@ -50,14 +67,17 @@ export default function HowItWorks() {
   ];
 
   return (
-    <section className={styles.section} id="how-it-works">
+    <section className={styles.section} id="how-it-works" ref={sectionRef}>
+      {/* Grain texture overlay */}
+      <div className="grain-overlay" />
+
       <div className="container">
-        <div className={styles.titleArea}>
+        <div className={`${styles.titleArea} reveal ${visible ? "visible" : ""}`}>
           <span className={styles.subtitle}>Process</span>
           <h2 className={styles.title}>How It Works — Just 3 Simple Steps</h2>
         </div>
 
-        <div className={styles.stepsGrid}>
+        <div className={`${styles.stepsGrid} reveal-stagger ${visible ? "visible" : ""}`}>
           {steps.map((step, index) => (
             <div key={index} className={styles.stepCard}>
               <div className={styles.stepNumber}>{step.number}</div>
@@ -80,3 +100,4 @@ export default function HowItWorks() {
     </section>
   );
 }
+

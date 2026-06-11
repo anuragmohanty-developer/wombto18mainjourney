@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { HeartPulse, GraduationCap, Building2, ArrowRight } from "lucide-react";
 import styles from "./Services.module.css";
 
@@ -15,6 +15,23 @@ interface ServiceCard {
 }
 
 export default function Services() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   const services: ServiceCard[] = [
     {
       icon: <HeartPulse size={36} />,
@@ -46,10 +63,13 @@ export default function Services() {
   ];
 
   return (
-    <section className={styles.servicesSection} id="services">
+    <section className={styles.servicesSection} id="services" ref={sectionRef}>
+      {/* Grain texture overlay */}
+      <div className="grain-overlay" />
+      
       <div className={styles.bgGlow} />
       <div className="container">
-        <div className={styles.header}>
+        <div className={`${styles.header} reveal ${visible ? "visible" : ""}`}>
           <span className="badge-green">Our Care Ecosystem</span>
           <h2 className={styles.title}>Three Specialized Digital Wellness Platforms</h2>
           <p className={styles.subtitleText}>
@@ -57,7 +77,7 @@ export default function Services() {
           </p>
         </div>
 
-        <div className={styles.grid}>
+        <div className={`${styles.grid} reveal-stagger ${visible ? "visible" : ""}`}>
           {services.map((service, index) => (
             <div key={index} className={`${styles.card} ${service.colorClass}`}>
               <div className={styles.cardHeader}>
@@ -88,3 +108,4 @@ export default function Services() {
     </section>
   );
 }
+

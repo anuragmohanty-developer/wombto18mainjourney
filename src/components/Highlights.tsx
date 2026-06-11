@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Trees, School, Award, ShieldCheck, HeartHandshake, Bell } from "lucide-react";
 import styles from "./Highlights.module.css";
 
@@ -11,6 +11,18 @@ interface HighlightItem {
 }
 
 export default function Highlights() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      { threshold: 0.15 }
+    );
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   const highlights: HighlightItem[] = [
     {
       icon: <Trees size={28} />,
@@ -45,17 +57,17 @@ export default function Highlights() {
   ];
 
   return (
-    <section className={styles.section} id="work">
+    <section className={styles.section} id="work" ref={sectionRef}>
       <div className="container">
-        <div className={styles.titleArea}>
+        <div className={`${styles.titleArea} reveal ${visible ? "visible" : ""}`}>
           <span className={styles.subtitle}>Key Pillars</span>
-          <h2 className={styles.title}>Empowering 25 Million Lives & Families</h2>
+          <h2 className={styles.title}>Empowering 25 Million Lives &amp; Families</h2>
           <p className={styles.intro}>
             We combine childhood wellness with active climate action. Here is how WombTo18 is creating a sustainable future, one child at a time.
           </p>
         </div>
 
-        <div className={styles.grid}>
+        <div className={`${styles.grid} reveal-stagger ${visible ? "visible" : ""}`}>
           {highlights.map((item, index) => (
             <div key={index} className="card">
               <div className={styles.iconWrapper}>{item.icon}</div>

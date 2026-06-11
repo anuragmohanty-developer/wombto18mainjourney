@@ -1,6 +1,9 @@
 .section {
   padding: 100px 0;
-  background-color: var(--color-bg-card);
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(140, 184, 153, 0.15) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 70%, rgba(197, 155, 39, 0.06) 0%, transparent 50%),
+    var(--color-bg-card);
   position: relative;
   overflow: hidden;
 }
@@ -73,6 +76,25 @@
   padding: 24px 16px;
   text-align: center;
   transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Gold shimmer sweep on SDG card hover */
+.sdgCard::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(105deg, transparent 20%, rgba(197, 155, 39, 0.12) 50%, transparent 80%);
+  transform: translateX(-120%) skewX(-15deg);
+  pointer-events: none;
+}
+
+.sdgCard:hover::after {
+  animation: shimmer 0.7s ease forwards;
 }
 
 .sdgCard:hover {
