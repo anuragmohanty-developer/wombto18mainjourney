@@ -1,0 +1,578 @@
+"use client";
+
+import React, { useRef, useState } from "react";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
+import styles from "./ScrollytellingJourney.module.css";
+
+// Register ScrollTrigger plugin
+gsap.registerPlugin(ScrollTrigger);
+
+interface Milestone {
+  ageTag: string;
+  title: string;
+  desc: string;
+  action: string;
+  imagePath: string;
+  watermark: string;
+}
+
+const stageColors = [
+  { bgStart: "#0a1b10", bgEnd: "#050d08" }, // Conception: Deep velvet forest green
+  { bgStart: "#14331e", bgEnd: "#0b1c11" }, // Pregnancy: Deep Moss
+  { bgStart: "#204b2f", bgEnd: "#122a1a" }, // Birth: Fresh Sage
+  { bgStart: "#1b4d32", bgEnd: "#0f2e1e" }, // Infant: Mid Leaf
+  { bgStart: "#1c5c3c", bgEnd: "#0e3422" }, // Toddler: Mint Forest
+  { bgStart: "#385e38", bgEnd: "#203620" }, // School Age: Woodland
+  { bgStart: "#6b5e28", bgEnd: "#3d3617" }, // Teen: Sunset Gold
+  { bgStart: "#11381e", bgEnd: "#0a2212" }, // Adulthood: Rich Emerald
+];
+
+const particleData = [
+  { left: "15%", top: "20%", delay: "0.2s", duration: "8s" },
+  { left: "75%", top: "15%", delay: "1.5s", duration: "11s" },
+  { left: "40%", top: "45%", delay: "0.8s", duration: "9s" },
+  { left: "80%", top: "65%", delay: "2.3s", duration: "12s" },
+  { left: "25%", top: "80%", delay: "3.1s", duration: "10s" },
+  { left: "60%", top: "35%", delay: "0.5s", duration: "7s" },
+  { left: "10%", top: "60%", delay: "1.8s", duration: "13s" },
+  { left: "85%", top: "85%", delay: "2.7s", duration: "9s" },
+  { left: "30%", top: "30%", delay: "1.1s", duration: "8s" },
+  { left: "70%", top: "50%", delay: "2.0s", duration: "11s" },
+];
+
+function interpolateColor(color1: string, color2: string, factor: number): string {
+  const c1 = color1.startsWith("#") ? color1.slice(1) : color1;
+  const c2 = color2.startsWith("#") ? color2.slice(1) : color2;
+
+  const r1 = parseInt(c1.substring(0, 2), 16);
+  const g1 = parseInt(c1.substring(2, 4), 16);
+  const b1 = parseInt(c1.substring(4, 6), 16);
+
+  const r2 = parseInt(c2.substring(0, 2), 16);
+  const g2 = parseInt(c2.substring(2, 4), 16);
+  const b2 = parseInt(c2.substring(4, 6), 16);
+
+  const r = Math.round(r1 + factor * (r2 - r1));
+  const g = Math.round(g1 + factor * (g2 - g1));
+  const b = Math.round(b1 + factor * (b2 - b1));
+
+  const toHex = (val: number) => val.toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+export default function ScrollytellingJourney() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const timelineColRef = useRef<HTMLDivElement>(null);
+  const pathRef = useRef<SVGPathElement>(null);
+  const cursorRef = useRef<SVGGElement>(null);
+  const mobileLineRef = useRef<HTMLDivElement>(null);
+  const [activeStage, setActiveStage] = useState<number>(0);
+
+  const milestones: Milestone[] = [
+    {
+      ageTag: "Stage 1 — Conception",
+      title: "The Spark of Life",
+      desc: "Tracking maternal wellness and nutrition guidelines from day one to support early cell growth.",
+      action: "Maternal Health Guide",
+      imagePath: "/images/conception.png",
+      watermark: "01",
+    },
+    {
+      ageTag: "Stage 2 — Pregnancy",
+      title: "9 Months of Nurturing",
+      desc: "Guiding mothers through monthly developmental checks, fetal growth steps, and prenatal vaccines.",
+      action: "Prenatal Tracker",
+      imagePath: "/images/pregnancy.png",
+      watermark: "02",
+    },
+    {
+      ageTag: "Stage 3 — Birth",
+      title: "A New Beginning",
+      desc: "Welcome to the world! Registered births trigger planting a geotagged tree in the OTAAT movement.",
+      action: "Get Birth Certificate",
+      imagePath: "/images/birth.png",
+      watermark: "03",
+    },
+    {
+      ageTag: "Stage 4 — 0-1 Years",
+      title: "First Steps & Protection",
+      desc: "High-priority immunization alerts keeping baby's clinical vaccine schedules fully on track.",
+      action: "Vaccine Schedule",
+      imagePath: "/images/infant.png",
+      watermark: "04",
+    },
+    {
+      ageTag: "Stage 5 — 1-5 Years",
+      title: "Early Child Development",
+      desc: "Language checklist, cognitive milestones, and immunization booster alerts for early years.",
+      action: "Milestone Checklist",
+      imagePath: "/images/toddler.png",
+      watermark: "05",
+    },
+    {
+      ageTag: "Stage 6 — School Age (6-12 Years)",
+      title: "Health‑Promoting Schools",
+      desc: "Fostering school wellness, regular exercise, healthy diet check-ins, and eye/hearing tests.",
+      action: "School Wellness Kit",
+      imagePath: "/images/school.png",
+      watermark: "06",
+    },
+    {
+      ageTag: "Stage 7 — Teenage (13-17 Years)",
+      title: "Resilience & Growth",
+      desc: "Supporting physical changes, emotional resilience, HPV vaccines, and mental health tools.",
+      action: "Teen Wellness Registry",
+      imagePath: "/images/teenage.png",
+      watermark: "07",
+    },
+    {
+      ageTag: "Stage 8 — 18 Years",
+      title: "Adulthood & Legacy",
+      desc: "Claim a full digital health history registry and your mature tree carbon offset certificate.",
+      action: "Claim Green ID Certificate",
+      imagePath: "/images/adulthood.png",
+      watermark: "08",
+    },
+  ];
+
+  // Image 3D tilt effects on mouse move inside the sticky showcase
+  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const xPercent = x / rect.width - 0.5;
+    const yPercent = y / rect.height - 0.5;
+
+    const tiltX = yPercent * -10;
+    const tiltY = xPercent * 10;
+
+    card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateY(-4px)`;
+  };
+
+  const handleCardMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    card.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)";
+  };
+
+  useGSAP(
+    () => {
+      const section = sectionRef.current;
+      const container = containerRef.current;
+      const timelineCol = timelineColRef.current;
+      const path = pathRef.current;
+      const cursor = cursorRef.current;
+      const mobileLine = mobileLineRef.current;
+
+      if (!section || !container || !timelineCol) return;
+
+      const mm = gsap.matchMedia();
+
+      // Set initial background style
+      gsap.set(section, {
+        background: `linear-gradient(135deg, ${stageColors[0].bgStart}, ${stageColors[0].bgEnd})`,
+      });
+
+      // 1. Desktop Layout (min-width: 1024px): Pinned Split-Screen Scrollytelling
+      mm.add("(min-width: 1024px)", () => {
+        let pathLength = 0;
+        if (path) {
+          pathLength = path.getTotalLength();
+          gsap.set(path, {
+            strokeDasharray: pathLength,
+            strokeDashoffset: pathLength,
+          });
+        }
+
+        // Master ScrollTrigger to pin the container
+        ScrollTrigger.create({
+          trigger: container,
+          start: "top 12%",
+          end: "+=2200", // Pinned scroll distance
+          pin: true,
+          scrub: 0.5,
+          onUpdate: (self) => {
+            const progress = self.progress;
+
+            // Scroll timelineCol upward based on progress relative to viewport mask height
+            const parentHeight = timelineCol.parentElement?.clientHeight || 650;
+            const scrollRange = timelineCol.scrollHeight - parentHeight;
+            gsap.set(timelineCol, {
+              y: -progress * scrollRange,
+            });
+
+            // Draw SVG path
+            if (path) {
+              gsap.set(path, {
+                strokeDashoffset: pathLength - progress * pathLength,
+              });
+
+              // Track leaf cursor coordinate and tangent rotation angle
+              if (cursor) {
+                const distance = progress * pathLength;
+                const point = path.getPointAtLength(distance);
+
+                const delta = 2;
+                const nextDistance = Math.min(distance + delta, pathLength);
+                const nextPoint = path.getPointAtLength(nextDistance);
+                const angle = Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x) * (180 / Math.PI);
+
+                // Counter-scale Y to prevent leaf distortion from vertical stretching of SVG
+                const scaleY = 1200 / timelineCol.scrollHeight;
+
+                gsap.set(cursor, {
+                  x: point.x,
+                  y: point.y,
+                  rotation: angle - 90,
+                  scaleX: 1,
+                  scaleY: scaleY,
+                  transformOrigin: "50% 50%",
+                });
+              }
+            }
+
+            // Blend section background gradient based on progress
+            const numStages = stageColors.length;
+            const rawIndex = progress * (numStages - 1);
+            const i = Math.floor(rawIndex);
+            const nextI = Math.min(i + 1, numStages - 1);
+            const factor = rawIndex - i;
+
+            const colorStart = interpolateColor(stageColors[i].bgStart, stageColors[nextI].bgStart, factor);
+            const colorEnd = interpolateColor(stageColors[i].bgEnd, stageColors[nextI].bgEnd, factor);
+
+            gsap.set(section, {
+              background: `linear-gradient(135deg, ${colorStart}, ${colorEnd})`,
+            });
+
+            // Alternating Ken Burns panning/zooming on the active image
+            const images = gsap.utils.toArray<HTMLElement>(".showcaseImage");
+            images.forEach((img, idx) => {
+              if (idx === i) {
+                // Active image gets Ken Burns scroll-linked effect based on local stage progress
+                const isEven = idx % 2 === 0;
+                const startScale = isEven ? 1.05 : 1.22;
+                const endScale = isEven ? 1.22 : 1.05;
+                const scale = startScale + factor * (endScale - startScale);
+
+                const startX = isEven ? -4 : 4;
+                const endX = isEven ? 4 : -4;
+                const xPercent = startX + factor * (endX - startX);
+
+                const startY = isEven ? -6 : 6;
+                const endY = isEven ? 6 : -6;
+                const yPercent = startY + factor * (endY - startY);
+
+                gsap.set(img, {
+                  scale: scale,
+                  xPercent: xPercent,
+                  yPercent: yPercent,
+                });
+              } else {
+                // Inactive images reset to center point
+                gsap.set(img, {
+                  scale: 1.1,
+                  xPercent: 0,
+                  yPercent: 0,
+                });
+              }
+            });
+
+            // Staged increments
+            const newStage = Math.min(Math.floor(progress * 8), 7);
+            setActiveStage(newStage);
+          },
+        });
+
+        // Background Parallax Leaves
+        const parallaxLeaves = gsap.utils.toArray<HTMLElement>(".parallaxLeaf");
+        parallaxLeaves.forEach((leaf) => {
+          const speed = parseFloat(leaf.getAttribute("data-speed") || "0.2");
+          gsap.to(leaf, {
+            yPercent: speed * 150,
+            ease: "none",
+            scrollTrigger: {
+              trigger: container,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: true,
+            },
+          });
+        });
+      });
+
+      // 2. Mobile Layout (max-width: 1023px): Simple scrolling reveals
+      mm.add("(max-width: 1023px)", () => {
+        if (mobileLine) {
+          gsap.to(mobileLine, {
+            height: "100%",
+            ease: "none",
+            scrollTrigger: {
+              trigger: container,
+              start: "top 25%",
+              end: "bottom 75%",
+              scrub: 0.5,
+            },
+          });
+        }
+
+        const nodes = gsap.utils.toArray<HTMLElement>(".milestoneNode");
+        nodes.forEach((node, index) => {
+          const dot = node.querySelector(".milestoneDot");
+
+          ScrollTrigger.create({
+            trigger: node,
+            start: "top 70%",
+            end: "bottom 30%",
+            onEnter: () => {
+              setActiveStage(index);
+              gsap.to(section, {
+                background: `linear-gradient(135deg, ${stageColors[index].bgStart}, ${stageColors[index].bgEnd})`,
+                duration: 0.8,
+                overwrite: "auto",
+              });
+            },
+            onEnterBack: () => {
+              setActiveStage(index);
+              gsap.to(section, {
+                background: `linear-gradient(135deg, ${stageColors[index].bgStart}, ${stageColors[index].bgEnd})`,
+                duration: 0.8,
+                overwrite: "auto",
+              });
+            },
+          });
+
+          gsap.fromTo(
+            dot,
+            { scale: 0.8 },
+            {
+              scale: 1,
+              scrollTrigger: {
+                trigger: node,
+                start: "top 80%",
+                end: "top 60%",
+                scrub: true,
+              },
+            }
+          );
+        });
+      });
+
+      return () => {
+        mm.revert();
+      };
+    },
+    { scope: sectionRef }
+  );
+
+  return (
+    <section className={styles.section} id="journey" ref={sectionRef}>
+      {/* Background Floating Parallax Leaves */}
+      <svg
+        className={`${styles.parallaxLeaf} parallaxLeaf`}
+        data-speed="0.25"
+        style={{ top: "15%", left: "5%", width: "60px", height: "60px", opacity: 0.08, position: "absolute", pointerEvents: "none" }}
+        viewBox="0 0 100 100"
+        fill="var(--color-primary)"
+      >
+        <path d="M 0 50 C 40 10, 60 10, 100 50 C 60 90, 40 90, 0 50 Z M 0 50 L 100 50" stroke="var(--color-primary-dark)" strokeWidth="3" />
+      </svg>
+      <svg
+        className={`${styles.parallaxLeaf} parallaxLeaf`}
+        data-speed="-0.35"
+        style={{ top: "42%", right: "6%", width: "50px", height: "50px", opacity: 0.06, position: "absolute", pointerEvents: "none" }}
+        viewBox="0 0 100 100"
+        fill="var(--color-primary-medium)"
+      >
+        <path d="M 0 50 C 40 10, 60 10, 100 50 C 60 90, 40 90, 0 50 Z M 0 50 L 100 50" stroke="var(--color-primary-dark)" strokeWidth="3" />
+      </svg>
+      <svg
+        className={`${styles.parallaxLeaf} parallaxLeaf`}
+        data-speed="0.4"
+        style={{ top: "68%", left: "4%", width: "55px", height: "55px", opacity: 0.07, position: "absolute", pointerEvents: "none" }}
+        viewBox="0 0 100 100"
+        fill="var(--color-accent-gold)"
+      >
+        <path d="M 0 50 C 40 10, 60 10, 100 50 C 60 90, 40 90, 0 50 Z M 0 50 L 100 50" stroke="var(--color-accent-gold)" strokeWidth="3" />
+      </svg>
+      <svg
+        className={`${styles.parallaxLeaf} parallaxLeaf`}
+        data-speed="-0.2"
+        style={{ top: "88%", right: "8%", width: "65px", height: "65px", opacity: 0.05, position: "absolute", pointerEvents: "none" }}
+        viewBox="0 0 100 100"
+        fill="var(--color-primary-dark)"
+      >
+        <path d="M 0 50 C 40 10, 60 10, 100 50 C 60 90, 40 90, 0 50 Z M 0 50 L 100 50" stroke="#000" strokeWidth="3" />
+      </svg>
+ 
+      <div className="container" ref={containerRef}>
+        <div className={styles.titleArea}>
+          <span className={styles.subtitle}>Life Course Timeline</span>
+          <h2 className={styles.title}>WombTo18 Journey</h2>
+        </div>
+ 
+        {/* Split Screen Container */}
+        <div className={styles.splitJourneyContainer}>
+          
+          {/* Left Column: Scrolling Milestones with svg path */}
+          <div className={styles.timelineCol} ref={timelineColRef}>
+            {/* Desktop Winding SVG Path & Cursor */}
+            <div className={styles.svgContainer}>
+              <svg
+                viewBox="0 0 100 1200"
+                width="100%"
+                height="100%"
+                preserveAspectRatio="none"
+                fill="none"
+                style={{ overflow: "visible" }}
+              >
+                {/* Background Path (gray) */}
+                <path
+                  className={styles.svgPathBg}
+                  d="M 50 0 C 10 150, 10 100, 50 200 C 90 300, 90 250, 50 350 C 10 450, 10 400, 50 500 C 90 600, 90 550, 50 650 C 10 750, 10 700, 50 800 C 90 900, 90 850, 50 950 C 10 1050, 10 1000, 50 1100 L 50 1200"
+                />
+                {/* Active Path (colored - animated by GSAP) */}
+                <path
+                  ref={pathRef}
+                  className={styles.svgPathActive}
+                  d="M 50 0 C 10 150, 10 100, 50 200 C 90 300, 90 250, 50 350 C 10 450, 10 400, 50 500 C 90 600, 90 550, 50 650 C 10 750, 10 700, 50 800 C 90 900, 90 850, 50 950 C 10 1050, 10 1000, 50 1100 L 50 1200"
+                />
+                
+                {/* Leaf Cursor Following Path */}
+                <g ref={cursorRef} style={{ pointerEvents: "none" }}>
+                  <path
+                    d="M 0 0 C 10 -15, 20 -15, 30 0 C 20 15, 10 15, 0 0 Z"
+                    fill="var(--color-primary)"
+                    stroke="#ffffff"
+                    strokeWidth="2"
+                    transform="translate(-15, 0)"
+                  />
+                  <circle r="4" fill="var(--color-accent-gold)" />
+                </g>
+              </svg>
+            </div>
+ 
+            {/* Mobile straight lines */}
+            <div className={styles.mobileLine} />
+            <div className={styles.mobileLineActive} ref={mobileLineRef} />
+ 
+            {/* Timeline Milestones (Scrolling list) */}
+            {milestones.map((item, index) => {
+              const isActive = activeStage === index;
+              const isSprouted = activeStage >= index;
+ 
+              return (
+                <div key={index} className={`${styles.milestoneNode} milestoneNode`}>
+                  {/* Scroll Dot & Sprout Leaf */}
+                  <div className={styles.dotWrapper}>
+                    <div className={`${styles.dot} milestoneDot ${isActive ? styles.dotActive : ""}`} />
+                    
+                    {/* Sprout Leaf Icon */}
+                    <svg
+                      className={`${styles.sproutLeaf} milestoneSproutLeaf ${isSprouted ? styles.sproutLeafActive : ""}`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 20 2c-1 3.5-1.5 5.5-2.1 11.2A7 7 0 0 1 11 20z" />
+                      <path d="M9 11l3 3" />
+                    </svg>
+                  </div>
+ 
+                  {/* Cardless Clean Content Block */}
+                  <div
+                    className={`${styles.textCard} milestoneTextCard ${isActive ? styles.textCardActive : ""}`}
+                    onClick={() => setActiveStage(index)}
+                  >
+                    {/* Giant Watermarked Number */}
+                    <div className={styles.watermarkNumber}>{item.watermark}</div>
+
+                    <span className={styles.ageTag}>{item.ageTag}</span>
+                    <h3 className={styles.cardTitle}>{item.title}</h3>
+                    <p className={styles.cardDesc}>{item.desc}</p>
+                    
+                    {/* Mobile Only Inline Image container */}
+                    <div className={styles.mobileImageContainer}>
+                      <Image
+                        src={item.imagePath}
+                        alt={item.title}
+                        className={styles.mobileImage}
+                        fill
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                      />
+                    </div>
+ 
+                    <span className={styles.actionBadge}>
+                      {item.action} <ArrowRight size={12} style={{ marginLeft: "4px" }} />
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+ 
+          {/* Right Column: Pinned Showcase (Desktop only) */}
+          <div className={styles.showcaseCol}>
+            <div className={styles.stickyShowcase}>
+              {milestones.map((item, index) => {
+                const isActive = activeStage === index;
+ 
+                return (
+                  <div
+                    key={index}
+                    className={`${styles.showcaseCard} ${isActive ? styles.showcaseCardActive : ""}`}
+                    onMouseMove={handleCardMouseMove}
+                    onMouseLeave={handleCardMouseLeave}
+                    style={{ transformStyle: "preserve-3d" }}
+                  >
+                    <div className={styles.imageContainer}>
+                      <Image
+                        src={item.imagePath}
+                        alt={item.title}
+                        className={`${styles.milestoneImage} showcaseImage`}
+                        fill
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                        priority={index === 0}
+                      />
+
+                      {/* Dynamic Stage Particle Overlay */}
+                      <div className={`${styles.particleOverlay} ${styles[`particlesStage${index + 1}`]}`}>
+                        {particleData.map((p, pIdx) => (
+                          <span
+                            key={pIdx}
+                            className={styles.particle}
+                            style={{
+                              left: p.left,
+                              top: p.top,
+                              animationDelay: p.delay,
+                              animationDuration: p.duration,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Glassy Caption Overlay */}
+                    <div className={styles.imageOverlay}>
+                      <span className={styles.overlayTag}>{item.ageTag}</span>
+                      <h3 className={styles.overlayTitle}>{item.title}</h3>
+                      <p className={styles.overlayDesc}>{item.desc}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+ 
+        </div>
+      </div>
+    </section>
+  );
+}
