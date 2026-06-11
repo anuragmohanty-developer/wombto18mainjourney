@@ -71,6 +71,7 @@ export default function ScrollytellingJourney() {
   const pathRef = useRef<SVGPathElement>(null);
   const cursorRef = useRef<SVGGElement>(null);
   const mobileLineRef = useRef<HTMLDivElement>(null);
+  const lastStageRef = useRef<number>(-1); // guard: avoid redundant React re-renders
   const [activeStage, setActiveStage] = useState<number>(0);
 
   const milestones: Milestone[] = [
@@ -194,18 +195,17 @@ export default function ScrollytellingJourney() {
         ScrollTrigger.create({
           trigger: container,
           start: "top 12%",
-          end: "+=2200", // Pinned scroll distance
+          end: "+=2200",
           pin: true,
-          scrub: 0.5,
+          scrub: 1.2, // Smoother lag-free scrub (was 0.5 — too laggy)
+          anticipatePin: 1, // Prevents pin-jump flash
           onUpdate: (self) => {
             const progress = self.progress;
 
-            // Scroll timelineCol upward based on progress relative to viewport mask height
+            // Scroll timelineCol upward
             const parentHeight = timelineCol.parentElement?.clientHeight || 650;
             const scrollRange = timelineCol.scrollHeight - parentHeight;
-            gsap.set(timelineCol, {
-              y: -progress * scrollRange,
-            });
+            gsap.set(timelineCol, { y: -progress * scrollRange });
 
             // Draw SVG path
             if (path) {
@@ -213,19 +213,14 @@ export default function ScrollytellingJourney() {
                 strokeDashoffset: pathLength - progress * pathLength,
               });
 
-              // Track leaf cursor coordinate and tangent rotation angle
               if (cursor) {
                 const distance = progress * pathLength;
                 const point = path.getPointAtLength(distance);
-
                 const delta = 2;
                 const nextDistance = Math.min(distance + delta, pathLength);
                 const nextPoint = path.getPointAtLength(nextDistance);
                 const angle = Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x) * (180 / Math.PI);
-
-                // Counter-scale Y to prevent leaf distortion from vertical stretching of SVG
                 const scaleY = 1200 / timelineCol.scrollHeight;
-
                 gsap.set(cursor, {
                   x: point.x,
                   y: point.y,
@@ -237,7 +232,7 @@ export default function ScrollytellingJourney() {
               }
             }
 
-            // Blend section background gradient based on progress
+            // Background gradient blend
             const numStages = stageColors.length;
             const rawIndex = progress * (numStages - 1);
             const i = Math.floor(rawIndex);
@@ -246,47 +241,34 @@ export default function ScrollytellingJourney() {
 
             const colorStart = interpolateColor(stageColors[i].bgStart, stageColors[nextI].bgStart, factor);
             const colorEnd = interpolateColor(stageColors[i].bgEnd, stageColors[nextI].bgEnd, factor);
-
             gsap.set(section, {
               background: `linear-gradient(135deg, ${colorStart}, ${colorEnd})`,
             });
 
-            // Alternating Ken Burns panning/zooming on the active image
+            // Ken Burns — only update active + adjacent images (not all 8 every frame)
             const images = gsap.utils.toArray<HTMLElement>(".showcaseImage");
             images.forEach((img, idx) => {
               if (idx === i) {
-                // Active image gets Ken Burns scroll-linked effect based on local stage progress
                 const isEven = idx % 2 === 0;
                 const startScale = isEven ? 1.05 : 1.22;
                 const endScale = isEven ? 1.22 : 1.05;
-                const scale = startScale + factor * (endScale - startScale);
-
-                const startX = isEven ? -4 : 4;
-                const endX = isEven ? 4 : -4;
-                const xPercent = startX + factor * (endX - startX);
-
-                const startY = isEven ? -6 : 6;
-                const endY = isEven ? 6 : -6;
-                const yPercent = startY + factor * (endY - startY);
-
                 gsap.set(img, {
-                  scale: scale,
-                  xPercent: xPercent,
-                  yPercent: yPercent,
+                  scale: startScale + factor * (endScale - startScale),
+                  xPercent: (isEven ? -4 : 4) + factor * (isEven ? 8 : -8),
+                  yPercent: (isEven ? -6 : 6) + factor * (isEven ? 12 : -12),
                 });
-              } else {
-                // Inactive images reset to center point
-                gsap.set(img, {
-                  scale: 1.1,
-                  xPercent: 0,
-                  yPercent: 0,
-                });
+              } else if (idx === i - 1 || idx === i + 1) {
+                // Reset only neighbours — skip the rest entirely
+                gsap.set(img, { scale: 1.1, xPercent: 0, yPercent: 0 });
               }
             });
 
-            // Staged increments
+            // Only trigger React re-render when stage actually changes
             const newStage = Math.min(Math.floor(progress * 8), 7);
-            setActiveStage(newStage);
+            if (newStage !== lastStageRef.current) {
+              lastStageRef.current = newStage;
+              setActiveStage(newStage);
+            }
           },
         });
 

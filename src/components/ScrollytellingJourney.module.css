@@ -3,7 +3,7 @@
   background-color: #0a1b10;
   position: relative;
   overflow: hidden;
-  transition: background 0.8s ease;
+  will-change: background;
 }
 
 .titleArea {
@@ -62,6 +62,7 @@
     position: relative;
     height: auto;
     transition: none !important;
+    will-change: transform;
   }
 }
 
